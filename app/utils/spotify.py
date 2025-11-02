@@ -1,4 +1,6 @@
+import html
 import logging
+import re
 from typing import List
 
 import spotipy
@@ -10,6 +12,28 @@ from .navidrome import update_or_create_navidrome_playlist
 
 
 logger = logging.getLogger(__name__)
+
+
+_HTML_TAG_RE = re.compile(r"<[^>]+>")
+
+
+def _sanitize_description(raw: str | None) -> str:
+    if not raw:
+        return ""
+
+    text = html.unescape(raw).strip()
+    if not text:
+        return ""
+
+    text = _HTML_TAG_RE.sub("", text).strip()
+    if not text:
+        return ""
+
+    # Spotify sometimes injects mosaic image URLs when no description exists.
+    if "mosaic.scdn.co" in text.lower():
+        return ""
+
+    return text
 
 
 def _get_sp_user_playlists(
@@ -40,15 +64,19 @@ def _get_sp_user_playlists(
             )
 
             for playlist in page_items:
+                description = _sanitize_description(playlist.get("description"))
                 playlists.append(
                     Playlist(
                         id=playlist["uri"],
                         name=playlist["name"] + suffix,
-                        description=playlist.get("description", "")
-                        if len(playlist["images"]) == 0
-                        else playlist["images"][0].get("url", ""),
+                        description=description,
                     )
                 )
+                if not description:
+                    logger.debug(
+                        "Playlist '%s' has no usable description from Spotify",
+                        playlist["name"],
+                    )
 
             if not sp_playlists.get("next"):
                 break
