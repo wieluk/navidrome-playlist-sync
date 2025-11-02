@@ -1,24 +1,26 @@
----
-version: "2.1"
 services:
-  playlistSync:
-    image: rnagabhyrava/plexplaylistsync:latest
-    container_name: playlistSync
+  navidrome_playlistsync:
+    container_name: navidrome_playlistsync
+    build:
+      context: ./app
     # optional only if you chose WRITE_MISSING_AS_CSV=1 in env
-    volumes:
-      - <Path where you want to write missing tracks>:/data
+    #volumes:
+    #  - <Path where you want to write missing tracks>:/data
     environment:
-      - PLEX_URL= <your local plex url>
-      - PLEX_TOKEN=<your plex token>
-      - WRITE_MISSING_AS_CSV=<1 or 0> # Default 0, 1 = writes missing tracks from each playlist to a csv
-      - APPEND_SERVICE_SUFFIX=<1 or 0> # Default 1, 1 = appends the service name to the playlist name
-      - ADD_PLAYLIST_POSTER=<1 or 0> # Default 1, 1 = add poster for each playlist
-      - ADD_PLAYLIST_DESCRIPTION=<1 or 0> # Default 1, 1 = add description for each playlist
+      - NAVIDROME_BASE_URL=${NAVIDROME_BASE_URL}
+      - NAVIDROME_PORT=443 # Default 443 for https, 80 for http, 4533 default navidrome port
+      - NAVIDROME_USERNAME=${NAVIDROME_USERNAME}
+      - NAVIDROME_PASSWORD=${NAVIDROME_PASSWORD}
+      - NAVIDROME_LEGACY_AUTH=0 # Default 0, set to 1 only if your server requires legacy auth
+      - WRITE_MISSING_AS_CSV=1 # Default 0, 1 = writes missing tracks from each playlist to a csv
+      - APPEND_SERVICE_SUFFIX=0 # Default 1, 1 = appends the service name to the playlist name
+      - ADD_PLAYLIST_POSTER=1 # Default 1, 1 = add poster for each playlist
+      - ADD_PLAYLIST_DESCRIPTION=1 # Default 1, 1 = add description for each playlist
       - APPEND_INSTEAD_OF_SYNC=0 # Default 0, 1 = Sync tracks, 0 = Append only
-      - SECONDS_TO_WAIT=84000
-      - SPOTIFY_CLIENT_ID=<your spotify client id>
-      - SPOTIFY_CLIENT_SECRET=<your spotify client secret>
-      - SPOTIFY_USER_ID=<your spotify user id>
-      - DEEZER_USER_ID=<your spotify user id>
-      - DEEZER_PLAYLIST_ID= #<deezer playlist ids space seperated>
+      - SECONDS_TO_WAIT=40000
+      - SPOTIFY_CLIENT_ID=${SPOTIFY_CLIENT_ID}
+      - SPOTIFY_CLIENT_SECRET=${SPOTIFY_CLIENT_SECRET}
+      - SPOTIFY_USER_ID=${SPOTIFY_USER_ID}
+      - PUID=1000
+      - PGID=100
     restart: unless-stopped

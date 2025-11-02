@@ -2,10 +2,11 @@ import logging
 from typing import List
 
 import spotipy
-from plexapi.server import PlexServer
+from libsonic.connection import Connection
+from spotipy.exceptions import SpotifyException
 
 from .helperClasses import Playlist, Track, UserInputs
-from .plex import update_or_create_plex_playlist
+from .navidrome import update_or_create_navidrome_playlist
 
 
 def _get_sp_user_playlists(
@@ -36,8 +37,10 @@ def _get_sp_user_playlists(
                     else playlist["images"][0].get("url", ""),
                 )
             )
-    except:
-        logging.error("Spotify User ID Error")
+    except SpotifyException as exc:
+        logging.error("Spotify user playlist fetch failed: %s", exc)
+    except Exception as exc:  # noqa: BLE001
+        logging.error("Unexpected Spotify error: %s", exc)
     return playlists
 
 
@@ -62,7 +65,22 @@ def _get_sp_tracks_from_playlist(
         url = track["track"]["external_urls"].get("spotify", "")
         return Track(title, artist, album, url)
 
-    sp_playlist_tracks = sp.user_playlist_tracks(user_id, playlist.id)
+    try:
+        sp_playlist_tracks = sp.user_playlist_tracks(user_id, playlist.id)
+    except SpotifyException as exc:
+        logging.error(
+            "Failed to fetch tracks for Spotify playlist %s: %s",
+            playlist.name,
+            exc,
+        )
+        return []
+    except Exception as exc:  # noqa: BLE001
+        logging.error(
+            "Unexpected error loading Spotify playlist %s: %s",
+            playlist.name,
+            exc,
+        )
+        return []
 
     # Only processes first 100 tracks
     tracks = list(
@@ -87,14 +105,13 @@ def _get_sp_tracks_from_playlist(
 
 
 def spotify_playlist_sync(
-    sp: spotipy.Spotify, plex: PlexServer, userInputs: UserInputs
+    sp: spotipy.Spotify, navidrome: Connection, userInputs: UserInputs
 ) -> None:
-    """Create/Update plex playlists with playlists from spotify.
+    """Create or update Navidrome playlists using Spotify playlists.
 
     Args:
         sp (spotipy.Spotify): Spotify configured instance
-        user_id (str): spotify user id
-        plex (PlexServer): A configured PlexServer instance
+        navidrome (Connection): Configured Navidrome connection
     """
     playlists = _get_sp_user_playlists(
         sp,
@@ -106,6 +123,8 @@ def spotify_playlist_sync(
             tracks = _get_sp_tracks_from_playlist(
                 sp, userInputs.spotify_user_id, playlist
             )
-            update_or_create_plex_playlist(plex, playlist, tracks, userInputs)
+            update_or_create_navidrome_playlist(
+                navidrome, playlist, tracks, userInputs
+            )
     else:
-        logging.error("No spotify playlists found for given user")
+        logging.error("No Spotify playlists found for given user")

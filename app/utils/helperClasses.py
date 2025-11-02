@@ -19,8 +19,11 @@ class Playlist:
 
 @dataclass
 class UserInputs:
-    plex_url: str
-    plex_token: str
+    navidrome_base_url: str
+    navidrome_port: int
+    navidrome_username: str
+    navidrome_password: str
+    navidrome_legacy_auth: bool
 
     write_missing_as_csv: bool
     append_service_suffix: bool
@@ -32,6 +35,3 @@ class UserInputs:
     spotipy_client_id: str
     spotipy_client_secret: str
     spotify_user_id: str
-
-    deezer_user_id: str
-    deezer_playlist_ids: str
