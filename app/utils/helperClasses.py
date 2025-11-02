@@ -29,6 +29,7 @@ class UserInputs:
     add_playlist_description: bool
     append_instead_of_sync: bool
     wait_seconds: int
+    match_confidence_threshold: float
 
     spotipy_client_id: str
     spotipy_client_secret: str

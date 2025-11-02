@@ -38,6 +38,7 @@ docker run -d \
   -e NAVIDROME_USERNAME=<your navidrome username> \
   -e NAVIDROME_PASSWORD=<your navidrome password> \
   -e NAVIDROME_LEGACY_AUTH=<1 or 0> # Default 0, 1 = enable legacy auth if required
+  -e NAVIDROME_MATCH_THRESHOLD=<0-1> # Default 0.6, float between 0 and 1 for minimum match confidence
   -e WRITE_MISSING_AS_CSV=<1 or 0> # Default 0, 1 = writes missing tracks from each playlist to a csv
   -e APPEND_SERVICE_SUFFIX=<1 or 0> # Default 1, 1 = appends the service name to the playlist name
   -e ADD_PLAYLIST_DESCRIPTION=<1 or 0> # Default 1, 1 = add description for each playlist
@@ -73,6 +74,7 @@ services:
       - NAVIDROME_USERNAME=${NAVIDROME_USERNAME}
       - NAVIDROME_PASSWORD=${NAVIDROME_PASSWORD}
       - NAVIDROME_LEGACY_AUTH=0 # Default 0, set to 1 only if your server requires legacy auth
+      - NAVIDROME_MATCH_THRESHOLD=0.6 # Default 0.6, float between 0 and 1 for minimum match confidence
       - WRITE_MISSING_AS_CSV=1 # Default 0, 1 = writes missing tracks from each playlist to a csv
       - APPEND_SERVICE_SUFFIX=0 # Default 1, 1 = appends the service name to the playlist name
       - ADD_PLAYLIST_DESCRIPTION=1 # Default 1, 1 = add description for each playlist

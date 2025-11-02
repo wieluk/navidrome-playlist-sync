@@ -35,6 +35,33 @@ def _delete_csv(name: str, path: str = "/data") -> None:
         file.unlink()
 
 
+def _persist_missing_tracks(
+    playlist_name: str,
+    missing_tracks: List[Track],
+    enabled: bool,
+    csv_path: str = "/data",
+) -> None:
+    if not enabled:
+        return
+
+    if missing_tracks:
+        try:
+            _write_csv(missing_tracks, playlist_name, csv_path)
+            logger.info("Missing tracks written to %s.csv", playlist_name)
+        except Exception as exc:  # noqa: BLE001
+            logger.info(
+                "Failed to write missing tracks for %s: %s",
+                playlist_name,
+                exc,
+            )
+    else:
+        try:
+            _delete_csv(playlist_name, csv_path)
+            logger.info("Deleted old %s.csv", playlist_name)
+        except Exception as exc:  # noqa: BLE001
+            logger.info("Failed to delete %s.csv: %s", playlist_name, exc)
+
+
 def _normalize(value: str | None) -> str:
     return value.lower().strip() if value else ""
 
@@ -96,27 +123,43 @@ def _pick_best_match(candidates: List[dict], track: Track) -> Tuple[dict | None,
 
 
 def _get_available_navidrome_tracks(
-    navidrome: Connection, tracks: List[Track]
+    navidrome: Connection, tracks: List[Track], threshold: float
 ) -> Tuple[List[str], List[Track]]:
     available_ids: List[str] = []
+    available_id_set: set[str] = set()
     missing_tracks: List[Track] = []
 
-    logger.debug("Resolving availability for %s tracks", len(tracks))
+    logger.debug(
+        "Resolving availability for %s tracks with threshold %.2f",
+        len(tracks),
+        threshold,
+    )
 
     for track in tracks:
         candidates = _search_tracks(navidrome, track)
         best_candidate, best_score = _pick_best_match(candidates, track)
 
-        if best_candidate and best_score >= 0.6:
+        if best_candidate and best_score >= threshold:
             track_id = best_candidate.get("id")
             if track_id:
-                available_ids.append(str(track_id))
+                track_id_str = str(track_id)
+                if track_id_str in available_id_set:
+                    logger.debug(
+                        "Duplicate Navidrome id %s for '%s - %s' skipped",
+                        track_id_str,
+                        track.title,
+                        track.artist,
+                    )
+                    continue
+
+                available_ids.append(track_id_str)
+                available_id_set.add(track_id_str)
                 if logger.isEnabledFor(logging.DEBUG):
                     logger.debug(
                         "Matched track '%s - %s' with Navidrome id %s (score=%.2f)",
                         track.title,
                         track.artist,
-                        track_id,
+                        track_id_str,
                         best_score,
                     )
             else:
@@ -210,7 +253,7 @@ def update_or_create_navidrome_playlist(
     userInputs: UserInputs,
 ) -> None:
     available_track_ids, missing_tracks = _get_available_navidrome_tracks(
-        navidrome, tracks
+        navidrome, tracks, userInputs.match_confidence_threshold
     )
 
     logger.info(
@@ -225,16 +268,11 @@ def update_or_create_navidrome_playlist(
             "No songs for playlist %s were found on Navidrome, skipping",
             playlist.name,
         )
-        if missing_tracks and userInputs.write_missing_as_csv:
-            try:
-                _write_csv(missing_tracks, playlist.name)
-                logger.info("Missing tracks written to %s.csv", playlist.name)
-            except Exception as exc:  # noqa: BLE001
-                logger.info(
-                    "Failed to write missing tracks for %s: %s",
-                    playlist.name,
-                    exc,
-                )
+        _persist_missing_tracks(
+            playlist.name,
+            missing_tracks,
+            userInputs.write_missing_as_csv,
+        )
         return
 
     try:
@@ -267,24 +305,8 @@ def update_or_create_navidrome_playlist(
 
     logger.info("Updated Navidrome playlist %s", playlist.name)
 
-    if userInputs.write_missing_as_csv:
-        if missing_tracks:
-            try:
-                _write_csv(missing_tracks, playlist.name)
-                logger.info("Missing tracks written to %s.csv", playlist.name)
-            except Exception as exc:  # noqa: BLE001
-                logger.info(
-                    "Failed to write missing tracks for %s: %s",
-                    playlist.name,
-                    exc,
-                )
-        else:
-            try:
-                _delete_csv(playlist.name)
-                logger.info("Deleted old %s.csv", playlist.name)
-            except Exception as exc:  # noqa: BLE001
-                logger.info(
-                    "Failed to delete %s.csv: %s",
-                    playlist.name,
-                    exc,
-                )
+    _persist_missing_tracks(
+        playlist.name,
+        missing_tracks,
+        userInputs.write_missing_as_csv,
+    )
