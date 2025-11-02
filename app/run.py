@@ -52,7 +52,6 @@ userInputs = UserInputs(
     navidrome_legacy_auth=_env_flag("NAVIDROME_LEGACY_AUTH", "0"),
     write_missing_as_csv=_env_flag("WRITE_MISSING_AS_CSV", "0"),
     append_service_suffix=_env_flag("APPEND_SERVICE_SUFFIX", "1"),
-    add_playlist_poster=_env_flag("ADD_PLAYLIST_POSTER", "0"),
     add_playlist_description=_env_flag("ADD_PLAYLIST_DESCRIPTION", "1"),
     append_instead_of_sync=_env_flag("APPEND_INSTEAD_OF_SYNC", "0"),
     wait_seconds=int(os.getenv("SECONDS_TO_WAIT", "86400")),
@@ -65,12 +64,11 @@ while True:
     logger.info("Starting playlist sync cycle")
     logger.debug(
         "Configured options: append_suffix=%s append_instead_of_sync=%s "
-        "write_missing_as_csv=%s add_description=%s add_poster=%s wait_seconds=%s",
+        "write_missing_as_csv=%s add_description=%s wait_seconds=%s",
         userInputs.append_service_suffix,
         userInputs.append_instead_of_sync,
         userInputs.write_missing_as_csv,
         userInputs.add_playlist_description,
-        userInputs.add_playlist_poster,
         userInputs.wait_seconds,
     )
 

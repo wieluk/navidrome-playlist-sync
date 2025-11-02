@@ -40,7 +40,6 @@ docker run -d \
   -e NAVIDROME_LEGACY_AUTH=<1 or 0> # Default 0, 1 = enable legacy auth if required
   -e WRITE_MISSING_AS_CSV=<1 or 0> # Default 0, 1 = writes missing tracks from each playlist to a csv
   -e APPEND_SERVICE_SUFFIX=<1 or 0> # Default 1, 1 = appends the service name to the playlist name
-  -e ADD_PLAYLIST_POSTER=<1 or 0> # Default 0, 1 = add poster for each playlist
   -e ADD_PLAYLIST_DESCRIPTION=<1 or 0> # Default 1, 1 = add description for each playlist
   -e APPEND_INSTEAD_OF_SYNC=0 # Default 0, 1 = Sync tracks, 0 = Append only
   -e SECONDS_TO_WAIT=84000 # Seconds to wait between syncs \
@@ -76,7 +75,6 @@ services:
       - NAVIDROME_LEGACY_AUTH=0 # Default 0, set to 1 only if your server requires legacy auth
       - WRITE_MISSING_AS_CSV=1 # Default 0, 1 = writes missing tracks from each playlist to a csv
       - APPEND_SERVICE_SUFFIX=0 # Default 1, 1 = appends the service name to the playlist name
-      - ADD_PLAYLIST_POSTER=1 # Default 1, 1 = add poster for each playlist
       - ADD_PLAYLIST_DESCRIPTION=1 # Default 1, 1 = add description for each playlist
       - APPEND_INSTEAD_OF_SYNC=0 # Default 0, 1 = Sync tracks, 0 = Append only
       - SECONDS_TO_WAIT=40000

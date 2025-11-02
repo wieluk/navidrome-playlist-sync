@@ -14,7 +14,6 @@ class Playlist:
     id: str
     name: str
     description: str
-    poster: str
 
 
 @dataclass
@@ -27,7 +26,6 @@ class UserInputs:
 
     write_missing_as_csv: bool
     append_service_suffix: bool
-    add_playlist_poster: bool
     add_playlist_description: bool
     append_instead_of_sync: bool
     wait_seconds: int

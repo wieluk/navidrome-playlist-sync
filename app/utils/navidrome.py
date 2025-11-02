@@ -265,11 +265,6 @@ def update_or_create_navidrome_playlist(
                 exc,
             )
 
-    if playlist.poster and userInputs.add_playlist_poster:
-        logger.info(
-            "Navidrome API does not support updating playlist posters; skipping"
-        )
-
     logger.info("Updated Navidrome playlist %s", playlist.name)
 
     if userInputs.write_missing_as_csv:
