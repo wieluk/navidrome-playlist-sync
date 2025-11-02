@@ -49,7 +49,7 @@ docker run -d \
   -e SPOTIFY_USER_ID=<your spotify user id from the account page> # Option 1 \
   -v <Path where you want to write missing tracks>:/data \
   --restart unless-stopped \
-  ghcr.io/wieluk/navidrome-playlist-sync/navidrome-playlistsync:latest
+  ghcr.io/wieluk/navidrome-playlist-sync:latest
 ```
 
 #### Notes
@@ -63,7 +63,7 @@ docker-compose.yml can be configured as follows
 ```yaml
 services:
   playlistSync:
-    image: ghcr.io/wieluk/navidrome-playlist-sync/navidrome-playlistsync:latest
+    image: ghcr.io/wieluk/navidrome-playlist-sync:latest
     container_name: playlistSync
     # optional only if you chose WRITE_MISSING_AS_CSV=1 in env
     #volumes:
