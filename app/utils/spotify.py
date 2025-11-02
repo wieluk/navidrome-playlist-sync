@@ -44,8 +44,7 @@ def _get_sp_user_playlists(
                     Playlist(
                         id=playlist["uri"],
                         name=playlist["name"] + suffix,
-                        description=playlist.get("description", ""),
-                        poster=""
+                        description=playlist.get("description", "")
                         if len(playlist["images"]) == 0
                         else playlist["images"][0].get("url", ""),
                     )
