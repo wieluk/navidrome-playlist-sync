@@ -2,12 +2,10 @@ import logging
 import os
 import time
 
-import deezer
 import spotipy
 from libsonic.connection import Connection
 from spotipy.oauth2 import SpotifyClientCredentials
 
-from utils.deezer import deezer_playlist_sync
 from utils.helperClasses import UserInputs
 from utils.spotify import spotify_playlist_sync
 
@@ -34,8 +32,6 @@ userInputs = UserInputs(
     spotipy_client_id=os.getenv("SPOTIFY_CLIENT_ID"),
     spotipy_client_secret=os.getenv("SPOTIFY_CLIENT_SECRET"),
     spotify_user_id=os.getenv("SPOTIFY_USER_ID"),
-    deezer_user_id=os.getenv("DEEZER_USER_ID"),
-    deezer_playlist_ids=os.getenv("DEEZER_PLAYLIST_ID"),
 )
 
 while True:
@@ -93,11 +89,6 @@ while True:
         spotify_playlist_sync(spotify_client, navidrome, userInputs)
 
     logging.info("Spotify playlist sync complete")
-
-    logging.info("Starting Deezer playlist sync")
-    dz_client = deezer.Client()
-    deezer_playlist_sync(dz_client, navidrome, userInputs)
-    logging.info("Deezer playlist sync complete")
 
     logging.info("All playlist sync tasks complete")
     logging.info("Sleeping for %s seconds", userInputs.wait_seconds)
