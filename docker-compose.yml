@@ -1,11 +1,10 @@
 services:
-  navidrome_playlistsync:
-    container_name: navidrome_playlistsync
-    build:
-      context: ./app
-    # optional only if you chose WRITE_MISSING_AS_CSV=1 in env
+  navidrome-playlist-sync:
+    container_name: navidrome-playlist-sync
+    image: ghcr.io/wieluk/navidrome-playlist-sync:latest
+    # optional only necessary if you chose WRITE_MISSING_AS_CSV=1 in env
     #volumes:
-    #  - <Path where you want to write missing tracks>:/data
+    #  - ./data:/data
     environment:
       - NAVIDROME_BASE_URL=${NAVIDROME_BASE_URL}
       - NAVIDROME_PORT=443 # Default 443 for https, 80 for http, 4533 default navidrome port

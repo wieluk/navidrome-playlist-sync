@@ -32,7 +32,7 @@ Configure the parameters as needed. Navidrome URL, credentials, and Spotify vari
 
 ```bash
 docker run -d \
-  --name=playlistSync \
+  --name=navidrome-playlist-sync \
   -e NAVIDROME_BASE_URL=<your navidrome url> \
   -e NAVIDROME_PORT=<your navidrome port> \
   -e NAVIDROME_USERNAME=<your navidrome username> \
@@ -40,7 +40,7 @@ docker run -d \
   -e NAVIDROME_LEGACY_AUTH=<1 or 0> # Default 0, 1 = enable legacy auth if required
   -e WRITE_MISSING_AS_CSV=<1 or 0> # Default 0, 1 = writes missing tracks from each playlist to a csv
   -e APPEND_SERVICE_SUFFIX=<1 or 0> # Default 1, 1 = appends the service name to the playlist name
-  -e ADD_PLAYLIST_POSTER=<1 or 0> # Default 0, 1 = add poster for each playlist (not yet supported by Navidrome)
+  -e ADD_PLAYLIST_POSTER=<1 or 0> # Default 0, 1 = add poster for each playlist
   -e ADD_PLAYLIST_DESCRIPTION=<1 or 0> # Default 1, 1 = add description for each playlist
   -e APPEND_INSTEAD_OF_SYNC=0 # Default 0, 1 = Sync tracks, 0 = Append only
   -e SECONDS_TO_WAIT=84000 # Seconds to wait between syncs \
@@ -62,29 +62,30 @@ docker-compose.yml can be configured as follows
 
 ```yaml
 services:
-  playlistSync:
+  navidrome-playlist-sync:
+    container_name: navidrome-playlist-sync
     image: ghcr.io/wieluk/navidrome-playlist-sync:latest
-    container_name: playlistSync
-    # optional only if you chose WRITE_MISSING_AS_CSV=1 in env
+    # optional only necessary if you chose WRITE_MISSING_AS_CSV=1 in env
     #volumes:
-    #  - <Path where you want to write missing tracks>:/data
+    #  - ./data:/data
     environment:
-      - NAVIDROME_BASE_URL=<your navidrome url>
-      - NAVIDROME_PORT=<your navidrome port>
-      - NAVIDROME_USERNAME=<your navidrome username>
-      - NAVIDROME_PASSWORD=<your navidrome password>
-      - NAVIDROME_LEGACY_AUTH=<1 or 0>
-      - WRITE_MISSING_AS_CSV=<1 or 0> # Default 0, 1 = writes missing tracks from each playlist to a csv
-      - APPEND_SERVICE_SUFFIX=<1 or 0> # Default 1, 1 = appends the service name to the playlist name
-      - ADD_PLAYLIST_POSTER=<1 or 0> # Default 0, 1 = add poster for each playlist (not yet supported by Navidrome)
-      - ADD_PLAYLIST_DESCRIPTION=<1 or 0> # Default 1, 1 = add description for each playlist
+      - NAVIDROME_BASE_URL=${NAVIDROME_BASE_URL}
+      - NAVIDROME_PORT=443 # Default 443 for https, 80 for http, 4533 default navidrome port
+      - NAVIDROME_USERNAME=${NAVIDROME_USERNAME}
+      - NAVIDROME_PASSWORD=${NAVIDROME_PASSWORD}
+      - NAVIDROME_LEGACY_AUTH=0 # Default 0, set to 1 only if your server requires legacy auth
+      - WRITE_MISSING_AS_CSV=1 # Default 0, 1 = writes missing tracks from each playlist to a csv
+      - APPEND_SERVICE_SUFFIX=0 # Default 1, 1 = appends the service name to the playlist name
+      - ADD_PLAYLIST_POSTER=1 # Default 1, 1 = add poster for each playlist
+      - ADD_PLAYLIST_DESCRIPTION=1 # Default 1, 1 = add description for each playlist
       - APPEND_INSTEAD_OF_SYNC=0 # Default 0, 1 = Sync tracks, 0 = Append only
-      - SECONDS_TO_WAIT=84000
-      - SPOTIFY_CLIENT_ID=<your spotify client id>
-      - SPOTIFY_CLIENT_SECRET=<your spotify client secret>
-      - SPOTIFY_USER_ID=<your spotify user id>
+      - SECONDS_TO_WAIT=40000
+      - SPOTIFY_CLIENT_ID=${SPOTIFY_CLIENT_ID}
+      - SPOTIFY_CLIENT_SECRET=${SPOTIFY_CLIENT_SECRET}
+      - SPOTIFY_USER_ID=${SPOTIFY_USER_ID}
+      - PUID=1000
+      - PGID=100
     restart: unless-stopped
-
 ```
 
 And run with :
