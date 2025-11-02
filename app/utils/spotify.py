@@ -9,6 +9,9 @@ from .helperClasses import Playlist, Track, UserInputs
 from .navidrome import update_or_create_navidrome_playlist
 
 
+logger = logging.getLogger(__name__)
+
+
 def _get_sp_user_playlists(
     sp: spotipy.Spotify, user_id: str, suffix: str = " - Spotify"
 ) -> List[Playlist]:
@@ -25,22 +28,42 @@ def _get_sp_user_playlists(
 
     try:
         sp_playlists = sp.user_playlists(user_id)
-        for playlist in sp_playlists["items"]:
-            playlists.append(
-                Playlist(
-                    id=playlist["uri"],
-                    name=playlist["name"] + suffix,
-                    description=playlist.get("description", ""),
-                    # playlists may not have a poster in such cases return ""
-                    poster=""
-                    if len(playlist["images"]) == 0
-                    else playlist["images"][0].get("url", ""),
-                )
+        total_seen = 0
+
+        while True:
+            page_items = sp_playlists.get("items", [])
+            total_seen += len(page_items)
+            logger.debug(
+                "Fetched %s playlists from Spotify API (accumulated=%s)",
+                len(page_items),
+                total_seen,
             )
+
+            for playlist in page_items:
+                playlists.append(
+                    Playlist(
+                        id=playlist["uri"],
+                        name=playlist["name"] + suffix,
+                        description=playlist.get("description", ""),
+                        poster=""
+                        if len(playlist["images"]) == 0
+                        else playlist["images"][0].get("url", ""),
+                    )
+                )
+
+            if not sp_playlists.get("next"):
+                break
+            sp_playlists = sp.next(sp_playlists)
+
+        logger.info(
+            "Discovered %s Spotify playlists for user %s",
+            len(playlists),
+            user_id,
+        )
     except SpotifyException as exc:
-        logging.error("Spotify user playlist fetch failed: %s", exc)
+        logger.error("Spotify user playlist fetch failed: %s", exc)
     except Exception as exc:  # noqa: BLE001
-        logging.error("Unexpected Spotify error: %s", exc)
+        logger.error("Unexpected Spotify error: %s", exc)
     return playlists
 
 
@@ -68,14 +91,14 @@ def _get_sp_tracks_from_playlist(
     try:
         sp_playlist_tracks = sp.user_playlist_tracks(user_id, playlist.id)
     except SpotifyException as exc:
-        logging.error(
+        logger.error(
             "Failed to fetch tracks for Spotify playlist %s: %s",
             playlist.name,
             exc,
         )
         return []
     except Exception as exc:  # noqa: BLE001
-        logging.error(
+        logger.error(
             "Unexpected error loading Spotify playlist %s: %s",
             playlist.name,
             exc,
@@ -89,6 +112,11 @@ def _get_sp_tracks_from_playlist(
             [i for i in sp_playlist_tracks["items"] if i.get("track")],
         )
     )
+    logger.debug(
+        "Fetched %s tracks for playlist %s (initial page)",
+        len(tracks),
+        playlist.name,
+    )
 
     # If playlist contains more than 100 tracks this loop is useful
     while sp_playlist_tracks["next"]:
@@ -101,6 +129,15 @@ def _get_sp_tracks_from_playlist(
                 )
             )
         )
+        logger.debug(
+            "Accumulated %s tracks for playlist %s", len(tracks), playlist.name
+        )
+
+    logger.info(
+        "Fetched %s total tracks for Spotify playlist %s",
+        len(tracks),
+        playlist.name,
+    )
     return tracks
 
 
@@ -119,12 +156,22 @@ def spotify_playlist_sync(
         " - Spotify" if userInputs.append_service_suffix else "",
     )
     if playlists:
+        logger.info(
+            "Beginning sync for %s Spotify playlists", len(playlists)
+        )
         for playlist in playlists:
+            logger.info("Syncing playlist '%s'", playlist.name)
             tracks = _get_sp_tracks_from_playlist(
                 sp, userInputs.spotify_user_id, playlist
             )
+            if not tracks:
+                logger.warning(
+                    "Skipping playlist '%s' because no matching tracks were fetched",
+                    playlist.name,
+                )
+                continue
             update_or_create_navidrome_playlist(
                 navidrome, playlist, tracks, userInputs
             )
     else:
-        logging.error("No Spotify playlists found for given user")
+        logger.error("No Spotify playlists found for given user")

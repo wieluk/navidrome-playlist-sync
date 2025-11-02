@@ -17,6 +17,33 @@ def _env_flag(name: str, default: str = "0") -> bool:
     return str(value).strip().lower() in {"1", "true", "yes", "on"}
 
 
+def _configure_logging() -> None:
+    level_name = os.getenv("LOG_LEVEL")
+    verbose_requested = _env_flag("VERBOSE_LOGGING", "0")
+
+    if level_name:
+        level = getattr(logging, level_name.upper(), logging.INFO)
+    elif verbose_requested:
+        level = logging.DEBUG
+    else:
+        level = logging.INFO
+
+    logging.basicConfig(
+        level=level,
+        format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+    )
+
+    # Reduce third-party chatter unless explicitly requested via LOG_LEVEL
+    if not level_name and not verbose_requested:
+        logging.getLogger("spotipy").setLevel(logging.WARNING)
+        logging.getLogger("libsonic").setLevel(logging.WARNING)
+
+
+_configure_logging()
+
+logger = logging.getLogger(__name__)
+
+
 userInputs = UserInputs(
     navidrome_base_url=os.getenv("NAVIDROME_BASE_URL"),
     navidrome_port=int(os.getenv("NAVIDROME_PORT", "4533")),
@@ -35,14 +62,24 @@ userInputs = UserInputs(
 )
 
 while True:
-    logging.info("Starting playlist sync")
+    logger.info("Starting playlist sync cycle")
+    logger.debug(
+        "Configured options: append_suffix=%s append_instead_of_sync=%s "
+        "write_missing_as_csv=%s add_description=%s add_poster=%s wait_seconds=%s",
+        userInputs.append_service_suffix,
+        userInputs.append_instead_of_sync,
+        userInputs.write_missing_as_csv,
+        userInputs.add_playlist_description,
+        userInputs.add_playlist_poster,
+        userInputs.wait_seconds,
+    )
 
     if not (
         userInputs.navidrome_base_url
         and userInputs.navidrome_username
         and userInputs.navidrome_password
     ):
-        logging.error("Missing Navidrome configuration; stopping sync loop")
+        logger.error("Missing Navidrome configuration; stopping sync loop")
         break
 
     try:
@@ -56,10 +93,10 @@ while True:
         if hasattr(navidrome, "ping"):
             navidrome.ping()
     except Exception as exc:  # noqa: BLE001
-        logging.error("Failed to connect to Navidrome: %s", exc)
+        logger.error("Failed to connect to Navidrome: %s", exc)
         break
 
-    logging.info("Starting Spotify playlist sync")
+    logger.info("Starting Spotify playlist sync")
 
     spotify_client = None
     if (
@@ -75,12 +112,12 @@ while True:
                 )
             )
         except Exception as exc:  # noqa: BLE001
-            logging.info(
+            logger.info(
                 "Spotify authorization error, skipping Spotify sync: %s",
                 exc,
             )
     else:
-        logging.info(
+        logger.info(
             "Missing one or more Spotify authorization variables, skipping"
             " Spotify sync",
         )
@@ -88,9 +125,9 @@ while True:
     if spotify_client is not None:
         spotify_playlist_sync(spotify_client, navidrome, userInputs)
 
-    logging.info("Spotify playlist sync complete")
+    logger.info("Spotify playlist sync complete")
 
-    logging.info("All playlist sync tasks complete")
-    logging.info("Sleeping for %s seconds", userInputs.wait_seconds)
+    logger.info("All playlist sync tasks complete")
+    logger.info("Sleeping for %s seconds", userInputs.wait_seconds)
 
     time.sleep(userInputs.wait_seconds)

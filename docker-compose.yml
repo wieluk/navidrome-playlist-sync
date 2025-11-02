@@ -6,6 +6,7 @@ services:
     #volumes:
     #  - ./data:/data
     environment:
+      - LOG_LEVEL=INFO
       - NAVIDROME_BASE_URL=${NAVIDROME_BASE_URL}
       - NAVIDROME_PORT=443 # Default 443 for https, 80 for http, 4533 default navidrome port
       - NAVIDROME_USERNAME=${NAVIDROME_USERNAME}
